@@ -69,25 +69,25 @@ parallelises efficiently on a single GPU.
 
 ```
 COALAgit/
-├── paper/                         # ICML 2026 manuscript
-├── solve/                         # CRONOS solve skeleton core
-│   ├── models/                    #   cvx_mlp, cvx_relu_mlp, two_layer_mlp, get_model
-│   ├── optimizers/                #   admm, pcg, adamW, dadapt_adamW, varpro
-│   ├── preconditioner/            #   nystrom
-│   ├── training/                  #   train
-│   ├── experiments/               #   lr_experiment
-│   └── utils/                     #   gpt2_dataloader, model_utils, opt_utils,
-│                                  #   metric_utils, proximal_utils, linops_utils,
-│                                  #   train_utils
+├── paper/                         
+├── solve/                         
+│   ├── models/                    
+│   ├── optimizers/                
+│   ├── preconditioner/            
+│   ├── training/                  
+│   ├── experiments/               
+│   └── utils/                     
+│                                  
+│                                  
 │
-├── extract.py                     # Stage 1 — feature extraction (chosen / rejected)
-├── extract_prep_prefdata.py       #         preference-data prep for extract.py
-├── LMdata_utils.py                #         dataset / collator classes used by extract.py
+├── extract.py                     
+├── extract_prep_prefdata.py       
+├── LMdata_utils.py               
 │
-├── cronos_trainer.py              # Stage 2 — Phase I (CRONOS, Algorithm 2)
-├── defrun.py                      #         run wrapper for CRONOS
+├── cronos_trainer.py              
+├── defrun.py                      
 │
-└── finetune_coala.py              # Stage 3 — Phase II (COALA loss, Algorithm 1)
+└── finetune_coala.py              
 ```
 
 This is the *minimal* pipeline. Baseline scripts (DPO / ORPO / SFT),
