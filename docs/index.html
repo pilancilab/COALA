@@ -13,12 +13,12 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="COALA Project Page">
   <meta property="og:title" content="COALA: Convex Optimization for Alignment and Preference Learning on a Single GPU">
-  <meta property="og:description" content="A reference-free, convex framework for preference fine-tuning of LLMs that runs end-to-end on a single RTX 4090.">
+  <meta property="og:description" content="A reference-free, convex framework for preference fine-tuning of LLMs that trains end-to-end on a single RTX 4090.">
   <meta property="og:url" content="https://miria00.github.io/COALA/">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="COALA: Convex Optimization for Alignment and Preference Learning on a Single GPU">
-  <meta name="twitter:description" content="A reference-free, convex framework for preference fine-tuning of LLMs that runs end-to-end on a single RTX 4090.">
+  <meta name="twitter:description" content="A reference-free, convex framework for preference fine-tuning of LLMs that trains end-to-end on a single RTX 4090.">
 
   <meta name="citation_title" content="Convex Optimization for Alignment and Preference Learning on a Single GPU">
   <meta name="citation_author" content="Feng, Miria">
@@ -289,7 +289,7 @@
             </div>
 
             <div class="is-size-6 publication-authors">
-              <span class="author-block">Stanford University</span>
+              <span class="author-block">Department of Electrical Engineering, Stanford University</span>
             </div>
 
             <div><span class="icml-badge">ICML&nbsp;2026</span></div>
@@ -306,6 +306,12 @@
                   <a href="https://github.com/miria00/COALA/" target="_blank" rel="noopener" class="external-link button is-normal is-rounded is-dark">
                     <span class="icon"><i class="fab fa-github"></i></span>
                     <span>Code</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://huggingface.co/datasets/miria0/EduFeedback" target="_blank" rel="noopener" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fas fa-database"></i></span>
+                    <span>Dataset</span>
                   </a>
                 </span>
                 <span class="link-block">
@@ -334,8 +340,8 @@
               the success of systems such as Gemini and ChatGPT. However, approaches like
               Reinforcement Learning from Human Feedback (RLHF) remain computationally expensive
               and complex. Direct Preference Optimization (DPO) offers a simpler alternative but
-              has limitations such as inconsistent ranking accuracy, high dependence on expensive
-              GPU resources, and expansive hyperparameter tuning.
+              has limitations such as inconsistent ranking accuracy, high dependence on GPU
+              resources, and expensive hyperparameter tuning.
             </p>
             <p>
               We propose the <strong>Convex Optimization for Alignment and Preference Learning
@@ -346,10 +352,10 @@
               single GPU.
             </p>
             <p>
-              Experiments across three datasets&mdash;including a 23,228-sample synthetic Educational
-              Feedback dataset&mdash;and five models (including LLaMA-8B) demonstrate COALA's
-              competitive performance and efficiency in utilizing as little as &asymp;17.6% of
-              DPO's total TFLOPS. COALA exhibits stable, monotonically increasing rewards and
+              Experiments across four datasets&mdash;including a 26,621-sample synthetic Educational
+              Feedback dataset&mdash;and six models (including Llama-3.1-8B) demonstrate COALA's
+              competitive performance and efficiency while utilizing as little as &asymp;17.6% of
+              DPO's total TFLOPs. COALA exhibits stable, monotonically increasing rewards and
               reaches peak margins in significantly shorter time in comparison to traditional
               methods such as DPO and ORPO. To the best of our knowledge, this is the first time
               convex optimization has been effectively applied to preference fine-tuning of LLMs.
@@ -367,8 +373,8 @@
       <div class="content">
         <p style="font-size: 1.05rem; color: var(--text-secondary); max-width: 760px; margin: 0 auto 2rem; text-align: center;">
           COALA stacks a convex two-layer ReLU network on the frozen features of a pre-trained
-          backbone $f_{\theta_\mathrm{pre}}$, then runs in three phases: two convex training
-          stages followed by guided decoding at inference time.
+          backbone $f_{\theta_\mathrm{pre}}$ and trains it in two convex stages: convex cvxNN
+          training (Phase I), followed by reference-free convex preference fine-tuning (Phase II).
         </p>
 
         <div class="method-phase">
@@ -378,17 +384,18 @@
             (<a href="https://arxiv.org/abs/2002.10588" target="_blank" rel="noopener">Pilanci &amp; Ergen, 2020</a>)
             using <strong>CRONOS</strong>, an ADMM solver with preconditioned conjugate gradients
             (<a href="https://arxiv.org/abs/2411.01088" target="_blank" rel="noopener">Feng, Frangella &amp; Pilanci, 2024</a>).
-            The ADMM subproblems reduce to a vector add and one matrix&ndash;vector product, which
-            JAX parallelises efficiently on a single GPU. Phase I outputs weights
-            $(\Theta_1, \theta_2)$ with an $\mathcal{O}(1/K)$ ergodic convergence guarantee
-            (Theorem&nbsp;4.2).
+            After two subproblems are solved, the ADMM iteration reduces to a vector addition and
+            one matrix&ndash;vector product, which JAX parallelises efficiently on a single GPU.
+            Phase I outputs convex-layer weights $(\Theta_1, \theta_2)$ with an
+            $\mathcal{O}(1/K)$ ergodic convergence guarantee (Theorem&nbsp;4.2).
           </p>
         </div>
 
         <div class="method-phase">
           <h3><span class="phase-tag">Phase II</span> Convex preference fine-tuning</h3>
           <p>
-            Freeze $\Theta_1$. The reference-free COALA loss is convex in $\theta_2$:
+            Freeze the base model $f_{\theta_\mathrm{pre}}$ and the first-layer weights $\Theta_1$.
+            The reference-free COALA loss is then convex in $\theta_2$:
           </p>
           <div style="text-align: center; padding: 0.5rem 0;">
             $$
@@ -399,22 +406,12 @@
             $$
           </div>
           <p>
-            This is a logistic regression in $\theta_2$, solved by AdamW (a stand-in for AGD)
-            with an $\mathcal{O}(1/k^2)$ accelerated-gradient guarantee
-            (Theorem&nbsp;4.3). Because only the last layer is trained, COALA fits on a single
-            RTX&nbsp;4090 (24&nbsp;GB) where DPO &amp; ORPO require an A100 (40&nbsp;GB).
-          </p>
-        </div>
-
-        <div class="method-phase">
-          <h3><span class="phase-tag">Phase III</span> Guided inference</h3>
-          <p>
-            At decoding time the frozen cvxNN head reweights the base LM's nucleus-sampled
-            candidates (top-$p$&nbsp;0.9, top-$k$&nbsp;50) every $N = 5$ tokens. For each
-            candidate $c$, the cvxNN scores the one-step extension $p_t \oplus c$, the scalar
-            scores are min&ndash;max normalised, and a guidance scale $\lambda$ blends them
-            into the base LM's distribution before sampling. No retraining &mdash; preference
-            signal is applied at sampling time.
+            This is a logistic regression in $\theta_2$ &mdash; smooth, convex, and with a
+            Lipschitz-continuous gradient &mdash; so accelerated gradient descent attains an
+            $\mathcal{O}(1/k^2)$ convergence rate to the global optimum (Theorem&nbsp;4.3); in
+            practice we minimise it with AdamW. Because only the last layer is trained, COALA
+            fits on a single RTX&nbsp;4090 (24&nbsp;GB), whereas DPO and ORPO in our experiments
+            require an A100 (40&nbsp;GB).
           </p>
         </div>
 
@@ -431,25 +428,26 @@
       <div class="content">
         <h3 class="subtitle is-4" style="font-weight: 700; margin-top: 1rem;">Stable, monotonic reward margins</h3>
         <p>
-          Across five backbones and three datasets, COALA's reward margin increases
-          monotonically &mdash; a direct consequence of optimizing a convex objective. DPO's
-          margins, in contrast, are noisy and frequently plateau or decay (paper Fig.&nbsp;1).
+          For the three models in Figure&nbsp;1, each evaluated with and without SFT
+          initialization, COALA's reward margin increases monotonically &mdash; a direct
+          consequence of optimizing a convex objective. DPO's margins, in contrast, are noisy
+          and frequently plateau or decay (paper Fig.&nbsp;1).
         </p>
         <div class="compare-grid">
           <figure class="compare-fig">
-            <img src="static/images/reward_margins_coala.png" alt="COALA reward margin curves across five models, all monotonically increasing." loading="lazy">
-            <figcaption><strong>(a) COALA</strong> &mdash; reward margins increase stably and monotonically across all five models.</figcaption>
+            <img src="static/images/reward_margins_coala.png" alt="COALA reward margin curves, all monotonically increasing." loading="lazy">
+            <figcaption><strong>(a) COALA</strong> &mdash; reward margins increase stably and monotonically across all three models.</figcaption>
           </figure>
           <figure class="compare-fig">
-            <img src="static/images/reward_margins_dpo.png" alt="DPO reward margin curves across five models, noisy and frequently decaying." loading="lazy">
-            <figcaption><strong>(b) DPO</strong> &mdash; reward margins are noisy and hyperparameter-sensitive across the same five models.</figcaption>
+            <img src="static/images/reward_margins_dpo.png" alt="DPO reward margin curves, noisy and frequently decaying." loading="lazy">
+            <figcaption><strong>(b) DPO</strong> &mdash; reward margins are noisy and hyperparameter-sensitive across the same three models.</figcaption>
           </figure>
         </div>
       </div>
 
       <!-- 6.2 AlpacaEval2 -->
       <div class="content" style="margin-top: 3rem;">
-        <h3 class="subtitle is-4" style="font-weight: 700;">AlpacaEval2 across 5 models &times; 3 datasets</h3>
+        <h3 class="subtitle is-4" style="font-weight: 700;">AlpacaEval2 across 3 models &times; 3 datasets</h3>
         <p>COALA matches or beats DPO and ORPO on AlpacaEval2 length-controlled win rate.</p>
         <div class="results-table" style="overflow-x: auto;">
           <table>
@@ -480,7 +478,7 @@
               <tr><td>DPO</td><td>34.73&plusmn;0.80</td><td>33.86&plusmn;0.72</td><td>26.41&plusmn;0.68</td><td>32.46&plusmn;1.09</td><td>31.58&plusmn;1.52</td><td>24.86&plusmn;1.02</td><td>494&plusmn;34</td><td>511&plusmn;49</td><td>476&plusmn;35</td></tr>
               <tr><td>SFT</td><td>17.36&plusmn;0.38</td><td>16.21&plusmn;0.23</td><td>14.88&plusmn;0.46</td><td>15.30&plusmn;0.10</td><td>15.47&plusmn;0.44</td><td>12.76&plusmn;1.08</td><td>404&plusmn;39</td><td>423&plusmn;25</td><td>459&plusmn;24</td></tr>
 
-              <tr class="model-row"><td colspan="10">LLaMA-8B</td></tr>
+              <tr class="model-row"><td colspan="10">Llama-3.1-8B</td></tr>
               <tr class="coala-row"><td>COALA</td><td><strong>40.90&plusmn;0.09</strong></td><td><strong>27.64&plusmn;0.27</strong></td><td><strong>20.64&plusmn;0.08</strong></td><td>38.20&plusmn;0.11</td><td><strong>25.68&plusmn;0.36</strong></td><td><strong>18.32&plusmn;0.23</strong></td><td>562&plusmn;12</td><td>415&plusmn;33</td><td>552&plusmn;20</td></tr>
               <tr><td>ORPO</td><td>23.87&plusmn;0.60</td><td>12.10&plusmn;0.71</td><td>12.91&plusmn;0.50</td><td>20.58&plusmn;0.68</td><td>12.05&plusmn;0.55</td><td>10.95&plusmn;0.55</td><td>599&plusmn;70</td><td>610&plusmn;33</td><td>354&plusmn;41</td></tr>
               <tr><td>DPO</td><td>40.68&plusmn;0.10</td><td>21.79&plusmn;0.29</td><td>18.89&plusmn;0.31</td><td><strong>38.53&plusmn;0.47</strong></td><td>20.18&plusmn;0.49</td><td>15.81&plusmn;0.30</td><td>539&plusmn;24</td><td>449&plusmn;98</td><td>503&plusmn;39</td></tr>
@@ -498,16 +496,24 @@
           COALA wins <strong>39.1%</strong> on EduFeedback and <strong>42.7%</strong> on IMDb &mdash;
           the highest win rate on both datasets in a double-blind 107-person study.
         </div>
+        <p>
+          The study drew 107 volunteers &mdash; 50 from a graduate deep-learning course and 57
+          from the technology sector &mdash; who each completed a double-blind multiple-choice
+          survey, selecting the most helpful answer (EduFeedback) or the most positive review
+          (IMDb). Win rates are reported with 95% Wald confidence intervals; COALA's intervals
+          lie entirely above those of the SFT and ORPO baselines on both datasets, indicating its
+          gains are statistically significant.
+        </p>
         <div class="results-table">
           <table>
             <thead>
               <tr><th>Dataset</th><th>COALA</th><th>ORPO</th><th>DPO</th><th>SFT</th></tr>
             </thead>
             <tbody>
-              <tr class="coala-row"><td>EduFeedback</td><td><strong>39.1%</strong></td><td>15.5%</td><td>28.8%</td><td>16.6%</td></tr>
-              <tr class="coala-row"><td>IMDb</td><td><strong>42.7%</strong></td><td>20.1%</td><td>24.8%</td><td>12.4%</td></tr>
+              <tr class="coala-row"><td>EduFeedback</td><td><strong>39.1% &plusmn; 9.2%</strong></td><td>15.5% &plusmn; 6.8%</td><td>28.8% &plusmn; 8.6%</td><td>16.6% &plusmn; 7.1%</td></tr>
+              <tr class="coala-row"><td>IMDb</td><td><strong>42.7% &plusmn; 9.4%</strong></td><td>20.1% &plusmn; 7.6%</td><td>24.8% &plusmn; 8.2%</td><td>12.4% &plusmn; 6.2%</td></tr>
             </tbody>
-            <caption>Table 2. Win rates from 107 real-human double-blind evaluations across two datasets.</caption>
+            <caption>Table 2. Human-evaluation win rates (mean &plusmn; 95% CI) from a double-blind study with 107 evaluators across two datasets.</caption>
           </table>
         </div>
       </div>
@@ -516,7 +522,7 @@
       <div class="content" style="margin-top: 3rem;">
         <h3 class="subtitle is-4" style="font-weight: 700;">Compute efficiency</h3>
         <div class="result-headline">
-          On LLaMA-8B, COALA uses <strong>~17.6% of DPO's TFLOPS</strong> &mdash; a 5.7&times; reduction.
+          On Llama-3.1-8B, COALA uses <strong>~17.6% of DPO's TFLOPs</strong> &mdash; a 5.7&times; reduction.
         </div>
         <div class="results-table">
           <table>
@@ -527,10 +533,10 @@
               <tr><td>DistilGPT2</td><td><strong>152.56</strong></td><td>537.12</td><td>643.33</td><td>271</td></tr>
               <tr><td>GPT-2</td><td><strong>379.89</strong></td><td>1,087.45</td><td>1,305.27</td><td>522</td></tr>
               <tr><td>Mistral-7B</td><td><strong>1,580.45</strong></td><td>9,284.71</td><td>11,241.89</td><td>2,492</td></tr>
-              <tr><td>LLaMA-8B</td><td><strong>1,805.39</strong></td><td>10,253.37</td><td>12,352.98</td><td>2,851</td></tr>
+              <tr><td>Llama-3.1-8B</td><td><strong>1,805.39</strong></td><td>10,253.37</td><td>12,352.98</td><td>2,851</td></tr>
               <tr><td>Dolphin-7B</td><td><strong>1,794.66</strong></td><td>10,091.25</td><td>12,116.50</td><td>2,804</td></tr>
             </tbody>
-            <caption>Table 3. TFLOPS measurements per method on the EduFeedback dataset.</caption>
+            <caption>Table 3. TFLOPs measurements per method on the EduFeedback dataset.</caption>
           </table>
         </div>
       </div>
@@ -543,18 +549,23 @@
       <h2 class="title is-3 has-text-centered">EduFeedback dataset</h2>
       <div class="content">
         <p>
-          We release <a href="https://github.com/miria00/COALA/" target="_blank" rel="noopener"><strong>EduFeedback</strong></a>:
-          26,621 GPT-4o-generated tutor conversations across 11 fields of study. Using the novel
-          <em>Alternating Population Strategy</em> we expand these to
-          <strong>65,606 preference triplets</strong> without any external reward model &mdash;
-          the first assistant turn becomes the "chosen" response and a later turn from the same
-          conversation becomes the "rejected" response. This exploits the natural drift from
-          direct answers to tangential follow-ups in objective domain dialogs.
+          We release <a href="https://huggingface.co/datasets/miria0/EduFeedback" target="_blank" rel="noopener"><strong>EduFeedback</strong></a>:
+          26,621 GPT-4o-generated student&ndash;tutor conversations spanning eleven fields of
+          study such as science and philosophy. Using the novel
+          <em>Alternating Population Strategy</em> we extract
+          <strong>65,606 preference triplets</strong> without any external reward or re-ranking
+          model &mdash; for each prompt, the tutor's immediate response becomes the "chosen"
+          answer and a later, topically related but less direct response from the same
+          conversation becomes the "rejected" answer. This exploits the natural drift from
+          direct answers to tangential follow-ups in objective-domain dialogs.
         </p>
         <p>
           COALA trained on these pairs achieves a <strong>39.1%</strong> win rate in human
-          evaluation, suggesting the strategy captures genuine preference signal at scale.
-          The dataset is released alongside the paper at the
+          evaluation, suggesting the strategy captures genuine preference signal at scale. We
+          note this is a domain-specific directness heuristic for objective, succinct dialogs
+          rather than a general preference-labeling method, so only EduFeedback uses it; the
+          three other datasets validate generalization. The dataset is released alongside the
+          paper at the
           <a href="https://github.com/miria00/COALA/" target="_blank" rel="noopener">project repository</a>.
         </p>
       </div>
@@ -575,8 +586,11 @@
   title     = {Convex Optimization for Alignment and Preference Learning on a Single GPU},
   author    = {Feng, Miria and Pilanci, Mert},
   booktitle = {Proceedings of the 43rd International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {306},
   year      = {2026},
-  series    = {PMLR 306},
+  publisher = {PMLR},
+  address   = {Seoul, South Korea},
 }</code></pre>
     </div>
   </section>
@@ -594,9 +608,10 @@
           HR00112490441. Miria Feng was supported in part by the Stanford Graduate Fellowship.
         </p>
         <p>
-          The authors thank Lucy Woof, Zachary Frangella, and Kevin Nam for valuable feedback on
-          an early draft and many insightful discussions, and thank all human volunteers and FCS
-          Solutions for making the human-feedback evaluation possible.
+          The authors thank Lucy Woof, Zachary Frangella, Kevin Nam, and Zhongwei Dang for
+          valuable feedback on an early draft and many insightful discussions, and thank all
+          human volunteers at FCS Solutions for participating in the preference-alignment
+          feedback survey.
         </p>
       </div>
     </div>
@@ -613,6 +628,8 @@
               <a href="https://github.com/miria00/COALA/" target="_blank" rel="noopener">Code on GitHub</a>
               &nbsp;&middot;&nbsp;
               <a href="https://github.com/miria00/COALA/blob/main/paper/Coala_preflearn_icml2026.pdf" target="_blank" rel="noopener">Paper PDF</a>
+              &nbsp;&middot;&nbsp;
+              <a href="https://huggingface.co/datasets/miria0/EduFeedback" target="_blank" rel="noopener">EduFeedback Dataset</a>
             </p>
             <p style="font-size: 0.85rem;">
               This page was built using the
