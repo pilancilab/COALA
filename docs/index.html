@@ -240,11 +240,16 @@
       display: flex;
       flex-direction: column;
     }
-    .compare-fig img,
-    .compare-fig object {
+    .compare-fig img {
       width: 100%;
       aspect-ratio: 866 / 506;
       object-fit: contain;
+      display: block;
+      background: #fff;
+    }
+    .compare-fig object {
+      width: 100%;
+      height: 400px;
       display: block;
       background: #fff;
       border: 0;
