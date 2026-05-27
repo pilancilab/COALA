@@ -247,23 +247,6 @@
       display: block;
       background: #fff;
     }
-    .compare-fig object {
-      width: 100%;
-      height: 400px;
-      display: block;
-      background: #fff;
-      border: 0;
-    }
-    .compare-fig .pdf-fallback {
-      padding: 2rem 1rem;
-      text-align: center;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-    }
-    .compare-fig .pdf-fallback a {
-      color: var(--cardinal);
-      text-decoration: underline;
-    }
     .compare-fig figcaption {
       padding: 0.7rem 0.95rem;
       font-size: 0.85rem;
@@ -452,21 +435,11 @@
         </p>
         <div class="compare-grid">
           <figure class="compare-fig">
-            <object data="COALA_imdb_test_large.pdf#toolbar=0&amp;navpanes=0&amp;view=FitH" type="application/pdf" aria-label="COALA reward margin curves, all monotonically increasing.">
-              <div class="pdf-fallback">
-                Your browser can't display PDFs inline.
-                <a href="COALA_imdb_test_large.pdf" target="_blank" rel="noopener">Download the figure</a>.
-              </div>
-            </object>
+            <img src="COALA_imdb_test_large.png" alt="COALA reward margin curves, all monotonically increasing." loading="lazy">
             <figcaption><strong>(a) COALA</strong> &mdash; reward margins increase stably and monotonically across all three models.</figcaption>
           </figure>
           <figure class="compare-fig">
-            <object data="DPO_imdb_test_large.pdf#toolbar=0&amp;navpanes=0&amp;view=FitH" type="application/pdf" aria-label="DPO reward margin curves, noisy and frequently decaying.">
-              <div class="pdf-fallback">
-                Your browser can't display PDFs inline.
-                <a href="DPO_imdb_test_large.pdf" target="_blank" rel="noopener">Download the figure</a>.
-              </div>
-            </object>
+            <img src="DPO_imdb_test_large.png" alt="DPO reward margin curves, noisy and frequently decaying." loading="lazy">
             <figcaption><strong>(b) DPO</strong> &mdash; reward margins are noisy and hyperparameter-sensitive across the same three models.</figcaption>
           </figure>
         </div>
